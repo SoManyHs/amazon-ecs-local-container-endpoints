@@ -1,0 +1,48 @@
+pull_request_rules:
+  - name: Merge on CI success and review approval
+    conditions:
+      - base~=(mainline|rename-commands)
+      - "#approved-reviews-by>=1"
+      - approved-reviews-by=@aws/aws-ecs-devx
+      - -approved-reviews-by~=author
+      - status-success=build (compile-linux)
+      - status-success=build (compile-windows)
+      - status-success=build (compile-darwin)
+      - status-success=test
+      - status-success=staticcheck
+      - status-success=license
+      - status-success=Semantic Pull Request
+      - -label~=(WIP|do-not-merge)
+      - -title~=(WIP|wip)
+      - -merged
+      - -closed
+      - author!=dependabot[bot]
+    actions:
+      merge:
+        method: squash
+        strict: smart
+        strict_method: merge
+        commit_message: title+body
+  - name: Automatically approve and merge Dependabot PRs
+    conditions:
+      - base=mainline
+      - status-success=build (compile-linux)
+      - status-success=build (compile-windows)
+      - status-success=build (compile-darwin)
+      - status-success=test
+      - status-success=staticcheck
+      - status-success=license
+      - status-success=Semantic Pull Request
+      - author=dependabot[bot]
+      - -title~=(WIP|wip)
+      - -label~=(WIP|do-not-merge)
+      - -merged
+      - -closed
+    actions:
+      review:
+       type: APPROVE
+      merge:
+        method: squash
+        strict: smart+fasttrack
+        strict_method: merge
+
