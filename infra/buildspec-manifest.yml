@@ -1,0 +1,31 @@
+version: 0.2
+# Based on the Docker documentation, must include the DOCKER_CLI_EXPERIMENTAL environment variable
+# https://docs.docker.com/engine/reference/commandline/manifest/
+
+env:
+  secrets-manager:
+    USERNAME: "com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials:username"
+    PASSWORD: "com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials:password"
+
+phases:
+    install:
+        commands:
+            - yum update -y
+    pre_build:
+        commands:
+          - echo "Logging into DockerHub..."
+          - docker login -u ${USERNAME} --password ${PASSWORD}
+    build:
+        commands:
+            - echo Build started on `date`
+            - echo Building the Docker manifest...
+            - export DOCKER_CLI_EXPERIMENTAL=enabled
+            - make create-manifests
+            - docker manifest annotate --arch amd64 $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest-amd64
+
+    post_build:
+        commands:
+            - echo Build completed on `date`
+            - echo Pushing the Docker image...
+            - make push-manifests
+            - docker manifest inspect $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
