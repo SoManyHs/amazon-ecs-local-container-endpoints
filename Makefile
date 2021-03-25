@@ -96,6 +96,15 @@ publish-arm:
 	docker push $(IMAGE_NAME):$(TAG)-arm64
 	docker push $(IMAGE_NAME):$(VERSION)-arm64
 
+.PHONY: create-manifest
+create-manifests: publish
+	docker manifest create $(IMAGE_NAME):latest $(IMAGE_NAME):latest-arm64 $(IMAGE_NAME):latest-amd64
+	docker manifest push $(IMAGE_NAME):latest
+	docker manifest create $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):$(TAG)-arm64 $(IMAGE_NAME):$(TAG)-amd64
+	docker manifest push $(IMAGE_NAME):$(TAG)
+	docker manifest create $(IMAGE_NAME):$(VERSION) $(IMAGE_NAME):$(VERSION)-arm64 $(IMAGE_NAME):$(VERSION)-amd64
+	docker manifest push $(IMAGE_NAME):$(VERSION)
+
 .PHONY: test
 test:
 	go test -mod=vendor -timeout=120s -v -cover ./local-container-endpoints/...

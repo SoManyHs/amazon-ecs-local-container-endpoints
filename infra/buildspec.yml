@@ -12,4 +12,5 @@ phases:
       - docker login -u ${USERNAME} --password ${PASSWORD}
   build:
     commands:
-      - make publish
+      - export DOCKER_CLI_EXPERIMENTAL=enabled
+      - make create-manifests
