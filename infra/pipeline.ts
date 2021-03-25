@@ -51,11 +51,15 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
 
     // Create build action for each platform
     for (const platform of platforms) {
-      const project = new codebuild.PipelineProject(this, `BuildImage-${platform['arch']}`, {
+      const arch = platform['arch'];
+      const project = new codebuild.PipelineProject(this, `BuildImage-${arch}`, {
         buildSpec: codebuild.BuildSpec.fromSourceFilename('./infra/buildspec.yml'),
         environment: {
           buildImage: platform['buildImage'],
-          privileged: true
+          privileged: true,
+          environmentVariables: {
+            PLATFORM: { value: arch },
+          },
         }
       });
 

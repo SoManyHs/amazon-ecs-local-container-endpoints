@@ -8,9 +8,18 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Building Image for Amazon ECS Local Container Endpoints..."
+      - echo "Logging into DockerHub..."
       - docker login -u ${USERNAME} --password ${PASSWORD}
   build:
     commands:
-      - export DOCKER_CLI_EXPERIMENTAL=enabled
-      - make create-manifests
+      - echo "Building Image for Amazon ECS Local Container Endpoints..."
+      # - export DOCKER_CLI_EXPERIMENTAL=enabled
+      - docker run -v $(shell pwd):/usr/src/app/src/github.com/awslabs/amazon-ecs-local-container-endpoints \
+        --workdir=/usr/src/app/src/github.com/awslabs/amazon-ecs-local-container-endpoints \
+        --env GOPATH=/usr/src/app \
+        --env ECS_RELEASE=cleanbuild \
+        golang:$(GO_VERSION) make $(AMD_BINARY)
+      - docker build --build-arg ARCH_DIR=$(AMD_DIR) -t $(IMAGE_NAME):latest-amd64 .
+      - docker tag $(IMAGE_NAME):latest-amd64 $(IMAGE_NAME):$(TAG)-amd64
+      - docker tag $(IMAGE_NAME):latest-amd64 $(IMAGE_NAME):$(VERSION)-amd64
+  post_build:

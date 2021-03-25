@@ -56,10 +56,10 @@ $(ARM_BINARY): $(SOURCES)
 	@echo "Built local-container-endpoints for linux-arm64"
 
 # release uses each architecture-specific go binary to build images
-.PHONY: release
-release: release-amd release-arm
+# .PHONY: release
+# release: release-amd release-arm
 
-.PHONY: release-amd
+.PHONY: release-amd64
 release-amd:
 	docker run -v $(shell pwd):/usr/src/app/src/github.com/awslabs/amazon-ecs-local-container-endpoints \
 		--workdir=/usr/src/app/src/github.com/awslabs/amazon-ecs-local-container-endpoints \
@@ -70,7 +70,7 @@ release-amd:
 	docker tag $(IMAGE_NAME):latest-amd64 $(IMAGE_NAME):$(TAG)-amd64
 	docker tag $(IMAGE_NAME):latest-amd64 $(IMAGE_NAME):$(VERSION)-amd64
 
-.PHONY: release-arm
+.PHONY: release-arm64
 release-arm:
 	docker run -v $(shell pwd):/usr/src/app/src/github.com/awslabs/amazon-ecs-local-container-endpoints \
 		--workdir=/usr/src/app/src/github.com/awslabs/amazon-ecs-local-container-endpoints \
@@ -81,28 +81,36 @@ release-arm:
 	docker tag $(IMAGE_NAME):latest-arm64 $(IMAGE_NAME):$(TAG)-arm64
 	docker tag $(IMAGE_NAME):latest-arm64 $(IMAGE_NAME):$(VERSION)-arm64
 
-.PHONY: publish
-publish: release publish-amd publish-arm
+# .PHONY: publish
+# publish: release publish-amd publish-arm
 
-.PHONY: publish-amd
+.PHONY: publish-amd64
 publish-amd:
 	docker push $(IMAGE_NAME):latest-amd64
 	docker push $(IMAGE_NAME):$(TAG)-amd64
 	docker push $(IMAGE_NAME):$(VERSION)-amd64
 
-.PHONY: publish-arm
+.PHONY: publish-arm64
 publish-arm:
 	docker push $(IMAGE_NAME):latest-arm64
 	docker push $(IMAGE_NAME):$(TAG)-arm64
 	docker push $(IMAGE_NAME):$(VERSION)-arm64
 
-.PHONY: create-manifest
-create-manifests: publish
+
+.PHONY: create-manifests
+create-manifests:
 	docker manifest create $(IMAGE_NAME):latest $(IMAGE_NAME):latest-arm64 $(IMAGE_NAME):latest-amd64
-	docker manifest push $(IMAGE_NAME):latest
 	docker manifest create $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):$(TAG)-arm64 $(IMAGE_NAME):$(TAG)-amd64
-	docker manifest push $(IMAGE_NAME):$(TAG)
 	docker manifest create $(IMAGE_NAME):$(VERSION) $(IMAGE_NAME):$(VERSION)-arm64 $(IMAGE_NAME):$(VERSION)-amd64
+
+.PHONY: annotate-manifests
+annotate-manifests:
+	docker manifest annotate --arch arm64 $(IMAGE_NAME):latest-arm64
+
+.PHONY: push-manifests
+push-manifests:
+	docker manifest push $(IMAGE_NAME):latest
+	docker manifest push $(IMAGE_NAME):$(TAG)
 	docker manifest push $(IMAGE_NAME):$(VERSION)
 
 .PHONY: test
