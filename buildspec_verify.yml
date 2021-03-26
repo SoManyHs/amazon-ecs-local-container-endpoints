@@ -1,8 +1,6 @@
 version: 0.2
 
 env:
-  variables:
-    IMAGE_REPO_NAME: somanyhs/amazon-ecs-local-container-endpoints
   secrets-manager:
     USERNAME: "com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials:username"
     PASSWORD: "com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials:password"

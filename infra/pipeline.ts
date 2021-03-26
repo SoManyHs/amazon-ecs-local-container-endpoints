@@ -92,7 +92,10 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:PutImage",
+          "ecr-public:*",
           "secretsmanager:GetSecretValue",
+          "sts:GetServiceBearerToken",
+          "sts:AssumeRole",
         ],
         resources: ["*"]
       }));
