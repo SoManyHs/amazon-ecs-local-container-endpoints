@@ -96,6 +96,13 @@ integ: build-local-image
 	docker build -t amazon-ecs-local-container-endpoints-integ-test:latest -f ./integ/Dockerfile .
 	docker-compose --file ./integ/docker-compose.yml up --abort-on-container-exit
 
+.PHONY: verify
+verify:
+	docker pull $(IMAGE_REPO_NAME):latest-$(ARCH_SUFFIX)
+	docker run -d -p 8000:80 -v /var/run:/var/run -v $(HOME)/.aws/:/home/.aws/ -e "ECS_LOCAL_METADATA_PORT=80" -e "HOME=/home" --name endpoints $(IMAGE_REPO_NAME):latest-$(ARCH_SUFFIX)
+	curl localhost:8000/creds
+	docker stop endpoints && docker rm endpoints
+
 .PHONY: clean
 clean:
 	rm bin/local/local-container-endpoints

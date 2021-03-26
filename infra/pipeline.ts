@@ -44,15 +44,20 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
       stageName: 'Build',
     });
 
+    const verifyStage = pipeline.addStage({
+      stageName: 'Verify',
+    });
+
     const platforms = [
       {'arch': 'amd64', 'buildImage': codebuild.LinuxBuildImage.AMAZON_LINUX_2_3},
       {'arch': 'arm64', 'buildImage': codebuild.LinuxBuildImage.AMAZON_LINUX_2_ARM},
     ];
 
-    // Create build action for each platform
+    // Create build and verify project for each platform
     for (const platform of platforms) {
       const arch = platform['arch'];
-      const project = new codebuild.PipelineProject(this, `BuildImage-${arch}`, {
+
+      const buildProject = new codebuild.PipelineProject(this, `BuildImage-${arch}`, {
         buildSpec: codebuild.BuildSpec.fromSourceFilename('./buildspec.yml'),
         environment: {
           buildImage: platform['buildImage'],
@@ -63,7 +68,36 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
         }
       });
 
-      project.addToRolePolicy(new iam.PolicyStatement({
+      const verifyProject = new codebuild.PipelineProject(this, `VerifyImage-${arch}`, {
+        buildSpec: codebuild.BuildSpec.fromSourceFilename('./buildspec_verify.yml'),
+        environment: {
+          buildImage: platform['buildImage'],
+          privileged: true,
+          environmentVariables: {
+            ARCH_SUFFIX: { value: arch },
+          }
+        }
+      });
+
+      buildProject.addToRolePolicy(new iam.PolicyStatement({
+        actions: ["ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+          "secretsmanager:GetSecretValue",
+        ],
+        resources: ["*"]
+      }));
+
+      verifyProject.addToRolePolicy(new iam.PolicyStatement({
         actions: ["ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
@@ -83,12 +117,19 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
 
       const buildAction = new actions.CodeBuildAction({
         actionName: `Build-${platform['arch']}`,
-        project,
+        project: buildProject,
+        input: sourceOutput
+      });
+
+      const verifyAction = new actions.CodeBuildAction({
+        actionName: `Verify-${platform['arch']}`,
+        project: verifyProject,
         input: sourceOutput
       });
 
       // Add build action for each platform to the build stage
       buildStage.addAction(buildAction);
+      verifyStage.addAction(verifyAction);
     }
   }
 
