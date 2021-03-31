@@ -79,6 +79,7 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
         }
       });
 
+    // Allow CodeBuild projects to access Docker login credentials
       buildProject.addToRolePolicy(new iam.PolicyStatement({
         actions: [
           "secretsmanager:GetSecretValue",
@@ -113,9 +114,35 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
       buildStage.addAction(buildAction);
       verifyStage.addAction(verifyAction);
     }
-  }
 
-  // TODO Build stage for creating manifest
+    // TODO Build stage for creating manifest
+    const manifestStage = pipeline.addStage({
+      stageName: 'CreateManifest',
+    });
+    const manifestProject = new codebuild.PipelineProject(this, `CreateManifest`, {
+      buildSpec: codebuild.BuildSpec.fromSourceFilename('./buildspec-manifest.yml'),
+      environment: {
+        privileged: true,
+      }
+    });
+
+    // Allow build project to access Docker login credentials
+    manifestProject.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        "secretsmanager:GetSecretValue",
+        "sts:GetServiceBearerToken",
+        "sts:AssumeRole",
+      ],
+      resources: [`arn:aws:secretsmanager:us-west-2:${process.env['CDK_DEFAULT_ACCOUNT']}:secret:com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials-XIxFhP`]
+    }));
+    const manifestAction = new actions.CodeBuildAction({
+      actionName: 'CreateManifest',
+      project: manifestProject,
+      input: sourceOutput // not sure about this
+    });
+    manifestStage.addAction(manifestAction);
+
+  }
 }
 
 const app = new cdk.App();
