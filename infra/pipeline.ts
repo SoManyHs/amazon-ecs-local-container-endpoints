@@ -115,7 +115,6 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
       verifyStage.addAction(verifyAction);
     }
 
-    // TODO Build stage for creating manifest
     const manifestStage = pipeline.addStage({
       stageName: 'CreateManifest',
     });
@@ -140,8 +139,8 @@ class EcsLocalContainerEndpointsImagePipeline extends cdk.Stack {
       project: manifestProject,
       input: sourceOutput // not sure about this
     });
-    manifestStage.addAction(manifestAction);
 
+    manifestStage.addAction(manifestAction);
   }
 }
 

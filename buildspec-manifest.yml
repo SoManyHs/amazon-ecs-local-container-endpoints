@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  secrets-manager:
+    USERNAME: "com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials:username"
+    PASSWORD: "com.amazonaws.ec2.madison.dockerhub.amazon-ecs-local-container-endpoints.credentials:password"
+
+phases:
+    install:
+        commands:
+            - yum update -y
+    pre_build:
+        commands:
+          - echo "Logging into DockerHub..."
+          - docker login -u ${USERNAME} --password ${PASSWORD}
+    build:
+        commands:
+            - echo Build started on `date`
+            - echo Building the Docker manifest...
+            - export DOCKER_CLI_EXPERIMENTAL=enabled
+            - make create-manifests
+            - make annotate-manifests
+
+    post_build:
+        commands:
+            - echo Build completed on `date`
+            - echo Pushing the Docker image...
+            - make push-manifests
+            - make inspect-manifests

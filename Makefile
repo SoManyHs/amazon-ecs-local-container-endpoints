@@ -84,6 +84,28 @@ publish-dockerhub:
 	docker push $(IMAGE_REPO_NAME):$(TAG)-$(ARCH_SUFFIX)
 	docker push $(IMAGE_REPO_NAME):$(VERSION)-$(ARCH_SUFFIX)
 
+.PHONY: create-manifests
+create-manifests:
+	docker manifest create $(IMAGE_NAME):latest $(IMAGE_NAME):latest-$(ARCH_SUFFIX) $(IMAGE_NAME):latest-$(ARCH_SUFFIX)
+	docker manifest create $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):$(TAG)-$(ARCH_SUFFIX) $(IMAGE_NAME):$(TAG)-$(ARCH_SUFFIX)
+	docker manifest create $(IMAGE_NAME):$(VERSION) $(IMAGE_NAME):$(VERSION)-$(ARCH_SUFFIX) $(IMAGE_NAME):$(VERSION)-$(ARCH_SUFFIX)
+
+.PHONY: annotate-manifests
+annotate-manifests:
+	docker manifest annotate --arch $(ARCH_SUFFIX) $(IMAGE_NAME):latest-$(ARCH_SUFFIX)
+
+.PHONY: push-manifests
+push-manifests:
+	docker manifest push $(IMAGE_NAME):latest
+	docker manifest push $(IMAGE_NAME):$(TAG)
+	docker manifest push $(IMAGE_NAME):$(VERSION)
+
+.PHONY: inspect-manifests
+push-manifests:
+	docker manifest inspect $(IMAGE_NAME):latest
+	docker manifest inspect $(IMAGE_NAME):$(TAG)
+	docker manifest inspect $(IMAGE_NAME):$(VERSION)
+
 .PHONY: test
 test:
 	go test -mod=vendor -timeout=120s -v -cover ./local-container-endpoints/...
